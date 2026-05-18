@@ -70,7 +70,7 @@ export default async function Home() {
                 <div className="aspect-[4/3] bg-stone-100 relative overflow-hidden">
                   {inv.bg_image ? (
                     <img 
-                      src={`http://localhost:5000${inv.bg_image}`} 
+                      src={inv.bg_image} 
                       alt="Cover" 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />

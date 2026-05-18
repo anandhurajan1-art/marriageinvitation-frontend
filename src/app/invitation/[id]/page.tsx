@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   
   // Use background image or bride image for Open Graph preview
   const imageUrl = invitation.bg_image || invitation.bride_image || invitation.groom_image;
-  const fullImageUrl = imageUrl ? `http://localhost:5000${imageUrl}` : undefined;
+  const fullImageUrl = imageUrl ? imageUrl : undefined;
 
   return {
     title,

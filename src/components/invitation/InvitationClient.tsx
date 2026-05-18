@@ -31,7 +31,7 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const API_URL = 'http://localhost:5000';
+  const API_URL = '';
 
   // Handle countdown
   useEffect(() => {
