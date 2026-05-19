@@ -264,7 +264,7 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
         {data.bg_image && (
           <motion.div 
             style={{ y: yPos }}
-            className="absolute inset-0 z-0"
+            className="absolute -top-[20%] -bottom-[20%] left-0 right-0 z-0"
           >
             <div className="absolute inset-0 bg-black/40 z-10"></div>
             <img 
