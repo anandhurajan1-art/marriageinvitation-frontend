@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { Music, Pause, Play, MapPin, Calendar, Heart, Share2, X } from 'lucide-react';
+import { Music, Pause, Play, MapPin, Calendar, Heart, Share2, X, Download, FileText, Image as ImageIcon } from 'lucide-react';
+import { toPng } from 'html-to-image';
+import { jsPDF } from 'jspdf';
 
 interface Gallery {
   id: string;
@@ -30,6 +32,10 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState({ d: 0, h: 0, m: 0, s: 0 });
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const API_URL = '';
 
@@ -99,6 +105,48 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
       navigator.clipboard.writeText(window.location.href);
       alert('Link copied to clipboard!');
     }
+    setShowShareMenu(false);
+  };
+
+  const downloadAsImage = async () => {
+    if (!exportRef.current) return;
+    setIsExporting(true);
+    try {
+      const dataUrl = await toPng(exportRef.current, { cacheBust: true, pixelRatio: 2 });
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `${data.groom_name}_${data.bride_name}_Invitation.png`;
+      link.click();
+    } catch (err) {
+      console.error('Error generating image', err);
+      alert('Failed to generate image. Please try again.');
+    } finally {
+      setIsExporting(false);
+      setShowShareMenu(false);
+    }
+  };
+
+  const downloadAsPDF = async () => {
+    if (!exportRef.current) return;
+    setIsExporting(true);
+    try {
+      const dataUrl = await toPng(exportRef.current, { cacheBust: true, pixelRatio: 2 });
+      
+      // Calculate aspect ratio for A4
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: [1080, 1920]
+      });
+      pdf.addImage(dataUrl, 'PNG', 0, 0, 1080, 1920);
+      pdf.save(`${data.groom_name}_${data.bride_name}_Invitation.pdf`);
+    } catch (err) {
+      console.error('Error generating PDF', err);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsExporting(false);
+      setShowShareMenu(false);
+    }
   };
 
   const { scrollYProgress } = useScroll();
@@ -128,13 +176,87 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
         </button>
       )}
 
-      {/* Floating Share Button */}
-      <button 
-        onClick={handleShare}
-        className="fixed bottom-6 right-6 z-50 p-4 rounded-full bg-stone-800 text-white shadow-2xl hover:bg-stone-900 transition-all hover:scale-110 active:scale-95"
-      >
-        <Share2 className="w-5 h-5" />
-      </button>
+      {/* Floating Share Menu */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+        <AnimatePresence>
+          {showShareMenu && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.9 }}
+              className="bg-white rounded-2xl shadow-2xl p-2 flex flex-col gap-1 border border-stone-100 min-w-[200px] font-sans"
+            >
+              <button onClick={handleShare} className="flex items-center gap-3 px-4 py-3 hover:bg-stone-50 rounded-xl text-stone-700 transition-colors text-left text-sm">
+                <Share2 className="w-4 h-4 text-stone-500" />
+                <span>Share Link</span>
+              </button>
+              <button onClick={downloadAsImage} disabled={isExporting} className="flex items-center gap-3 px-4 py-3 hover:bg-stone-50 rounded-xl text-stone-700 transition-colors text-left text-sm disabled:opacity-50">
+                <ImageIcon className="w-4 h-4 text-stone-500" />
+                <span>{isExporting ? 'Generating...' : 'Download Image'}</span>
+              </button>
+              <button onClick={downloadAsPDF} disabled={isExporting} className="flex items-center gap-3 px-4 py-3 hover:bg-stone-50 rounded-xl text-stone-700 transition-colors text-left text-sm disabled:opacity-50">
+                <FileText className="w-4 h-4 text-stone-500" />
+                <span>{isExporting ? 'Generating...' : 'Download PDF'}</span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        <button 
+          onClick={() => setShowShareMenu(!showShareMenu)}
+          className="p-4 rounded-full bg-stone-800 text-white shadow-2xl hover:bg-stone-900 transition-all hover:scale-110 active:scale-95 flex items-center justify-center"
+        >
+          {showShareMenu ? <X className="w-5 h-5" /> : <Download className="w-5 h-5" />}
+        </button>
+      </div>
+
+      {/* Hidden Poster Layout for Exporting */}
+      <div className="overflow-hidden h-0 w-0 absolute pointer-events-none">
+        <div 
+          ref={exportRef} 
+          className="relative w-[1080px] h-[1920px] flex flex-col items-center justify-center font-serif text-white overflow-hidden bg-stone-900"
+        >
+          {data.bg_image ? (
+            <>
+              <div className="absolute inset-0 bg-black/50 z-10"></div>
+              <img src={`${API_URL}${data.bg_image}`} alt="Background" crossOrigin="anonymous" className="absolute inset-0 w-full h-full object-cover z-0" />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-stone-800 to-stone-900 z-0"></div>
+          )}
+          
+          <div className="relative z-20 flex flex-col items-center justify-center text-center px-12 w-full h-full">
+            <div className="border border-white/30 rounded-3xl p-16 backdrop-blur-sm bg-black/20 w-full max-w-3xl flex flex-col items-center">
+              <Heart className="w-16 h-16 mb-8 text-rose-400" />
+              
+              <h3 className="text-3xl tracking-[0.3em] uppercase mb-12 font-sans font-light">
+                We are getting married
+              </h3>
+              
+              <h1 className="text-8xl font-bold mb-12 drop-shadow-xl leading-tight">
+                {data.groom_name}
+                <span className="block text-6xl my-6 italic text-amber-300 font-serif">&</span>
+                {data.bride_name}
+              </h1>
+              
+              <div className="w-32 h-px bg-white/50 mb-12"></div>
+              
+              <div className="flex items-center gap-4 text-3xl mb-8 font-light">
+                <Calendar className="w-8 h-8 text-amber-300" />
+                {new Date(data.wedding_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </div>
+              
+              <div className="flex flex-col items-center gap-4 text-2xl font-sans font-light text-white/90 max-w-xl">
+                <MapPin className="w-8 h-8 text-amber-300 mb-2" />
+                <p className="whitespace-pre-line leading-relaxed">{data.venue}</p>
+                <p className="mt-4 font-bold text-amber-300">
+                  {new Date(data.wedding_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
