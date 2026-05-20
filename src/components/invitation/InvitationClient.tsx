@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { Music, Pause, Play, MapPin, Calendar, Heart, Share2, X, Download, FileText, Image as ImageIcon } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
+import { useAuthStore } from '@/store/authStore';
 
 interface Gallery {
   id: string;
@@ -36,6 +37,9 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  const token = useAuthStore((state) => state.token);
+  const isAdmin = !!token;
 
   const API_URL = '';
 
@@ -176,10 +180,10 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
         </button>
       )}
 
-      {/* Floating Share Menu */}
+      {/* Floating Share Menu / Button */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
         <AnimatePresence>
-          {showShareMenu && (
+          {showShareMenu && isAdmin && (
             <motion.div 
               initial={{ opacity: 0, y: 10, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -203,15 +207,16 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
         </AnimatePresence>
         
         <button 
-          onClick={() => setShowShareMenu(!showShareMenu)}
+          onClick={() => isAdmin ? setShowShareMenu(!showShareMenu) : handleShare()}
           className="p-4 rounded-full bg-stone-800 text-white shadow-2xl hover:bg-stone-900 transition-all hover:scale-110 active:scale-95 flex items-center justify-center"
         >
-          {showShareMenu ? <X className="w-5 h-5" /> : <Download className="w-5 h-5" />}
+          {isAdmin && showShareMenu ? <X className="w-5 h-5" /> : (isAdmin ? <Download className="w-5 h-5" /> : <Share2 className="w-5 h-5" />)}
         </button>
       </div>
 
-      {/* Hidden Poster Layout for Exporting */}
-      <div className="overflow-hidden h-0 w-0 absolute pointer-events-none">
+      {/* Hidden Poster Layout for Exporting (Only render if Admin) */}
+      {isAdmin && (
+        <div className="overflow-hidden h-0 w-0 absolute pointer-events-none">
         <div 
           ref={exportRef} 
           className="relative w-[1080px] h-[1920px] flex flex-col items-center justify-center font-serif text-white overflow-hidden bg-stone-900"
@@ -256,7 +261,7 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
