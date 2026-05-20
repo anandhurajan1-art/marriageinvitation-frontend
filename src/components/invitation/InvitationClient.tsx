@@ -39,7 +39,11 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
   const [isExporting, setIsExporting] = useState(false);
 
   const token = useAuthStore((state) => state.token);
-  const isAdmin = !!token;
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    setIsAdmin(!!token);
+  }, [token]);
 
   const API_URL = '';
 
@@ -261,6 +265,7 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* Hero Section */}
