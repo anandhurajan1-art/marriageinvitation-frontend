@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     return { title: 'Invitation Not Found' };
   }
 
-  const title = `You're Invited! ${invitation.groom_name} & ${invitation.bride_name}'s Wedding`;
+  const title = `You're Invited! ${invitation.name_order === 'bride_first' ? invitation.bride_name + ' & ' + invitation.groom_name : invitation.groom_name + ' & ' + invitation.bride_name}'s Wedding`;
   const description = `Join us in celebrating our wedding on ${new Date(invitation.wedding_date).toLocaleDateString()} at ${invitation.venue}.`;
   
   // Use background image or bride image for Open Graph preview

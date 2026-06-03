@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Edit, Trash2, Link as LinkIcon, ExternalLink } from 'lucide-react';
+import { Eye, EyeOff, Edit, Trash2, Link as LinkIcon, ExternalLink, Users } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns'; // Need to install date-fns
 
@@ -230,6 +230,13 @@ export default function DashboardPage() {
                           title="View Public Page"
                         >
                           <ExternalLink className="w-4 h-4" />
+                        </Link>
+                        <Link 
+                          href={`/admin/rsvps/${inv.id}`}
+                          className="p-2 text-stone-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="View RSVPs"
+                        >
+                          <Users className="w-4 h-4" />
                         </Link>
                         <Link 
                           href={`/admin/edit/${inv.id}`}

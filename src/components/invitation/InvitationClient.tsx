@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { Music, Pause, Play, MapPin, Calendar, Heart, Share2, X, Download, FileText, Image as ImageIcon } from 'lucide-react';
+import { Music, Pause, Play, MapPin, Calendar, Heart, Share2, X, Download, FileText, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import { useAuthStore } from '@/store/authStore';
@@ -25,6 +25,9 @@ interface InvitationData {
   venue: string;
   message: string;
   galleries: Gallery[];
+  google_map_link?: string | null;
+  parents_name?: string | null;
+  rsvp_enabled?: boolean;
 }
 
 export default function InvitationClient({ data }: { data: InvitationData }) {
@@ -37,6 +40,11 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  // RSVP State
+  const [rsvpModalOpen, setRsvpModalOpen] = useState(false);
+  const [rsvpForm, setRsvpForm] = useState({ name: '', email: '', attending: 'true', guests_count: '1', message: '' });
+  const [rsvpStatus, setRsvpStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
   const token = useAuthStore((state) => state.token);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -131,6 +139,29 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
     } finally {
       setIsExporting(false);
       setShowShareMenu(false);
+    }
+  };
+
+  const submitRsvp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRsvpStatus('submitting');
+    try {
+      const res = await fetch(`http://localhost:5000/api/rsvps/${data.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: rsvpForm.name,
+          email: rsvpForm.email,
+          attending: rsvpForm.attending === 'true',
+          guests_count: rsvpForm.attending === 'true' ? parseInt(rsvpForm.guests_count) : 0,
+          message: rsvpForm.message
+        })
+      });
+      if (!res.ok) throw new Error('Failed to submit RSVP');
+      setRsvpStatus('success');
+    } catch (err) {
+      console.error(err);
+      setRsvpStatus('error');
     }
   };
 
@@ -242,11 +273,29 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
                 We are getting married
               </h3>
               
-              <h1 className="text-8xl font-bold mb-12 drop-shadow-xl leading-tight">
-                {data.groom_name}
-                <span className="block text-6xl my-6 italic text-amber-300 font-serif">&</span>
-                {data.bride_name}
-              </h1>
+              <div className="flex flex-col items-center gap-6 mb-12 drop-shadow-xl text-center">
+                {data.name_order === 'bride_first' ? (
+                  <>
+                    <h1 className="text-8xl font-bold leading-tight">{data.bride_name}</h1>
+                    {data.bride_parents && <p className="text-2xl font-sans italic text-white/80">D/O {data.bride_parents}</p>}
+                    
+                    <span className="text-6xl my-2 italic text-amber-300 font-serif">&amp;</span>
+                    
+                    <h1 className="text-8xl font-bold leading-tight">{data.groom_name}</h1>
+                    {data.groom_parents && <p className="text-2xl font-sans italic text-white/80">S/O {data.groom_parents}</p>}
+                  </>
+                ) : (
+                  <>
+                    <h1 className="text-8xl font-bold leading-tight">{data.groom_name}</h1>
+                    {data.groom_parents && <p className="text-2xl font-sans italic text-white/80">S/O {data.groom_parents}</p>}
+                    
+                    <span className="text-6xl my-2 italic text-amber-300 font-serif">&amp;</span>
+                    
+                    <h1 className="text-8xl font-bold leading-tight">{data.bride_name}</h1>
+                    {data.bride_parents && <p className="text-2xl font-sans italic text-white/80">D/O {data.bride_parents}</p>}
+                  </>
+                )}
+              </div>
               
               <div className="w-32 h-px bg-white/50 mb-12"></div>
               
@@ -298,16 +347,34 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
             We are getting married
           </motion.h3>
           
-          <motion.h1 
+          <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.2, delay: 0.5, ease: "easeOut" }}
-            className="text-6xl md:text-8xl lg:text-9xl font-bold mb-8 drop-shadow-lg"
+            className="flex flex-col items-center gap-4 md:gap-6 mb-8 drop-shadow-lg"
           >
-            {data.groom_name}
-            <span className="block text-4xl md:text-6xl my-4 italic text-amber-300 font-serif">&</span>
-            {data.bride_name}
-          </motion.h1>
+            {data.name_order === 'bride_first' ? (
+              <>
+                <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-tight">{data.bride_name}</h1>
+                {data.bride_parents && <p className="text-lg md:text-xl font-sans italic opacity-80">D/O {data.bride_parents}</p>}
+                
+                <span className="text-4xl md:text-6xl my-2 italic text-amber-300 font-serif">&amp;</span>
+                
+                <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-tight">{data.groom_name}</h1>
+                {data.groom_parents && <p className="text-lg md:text-xl font-sans italic opacity-80">S/O {data.groom_parents}</p>}
+              </>
+            ) : (
+              <>
+                <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-tight">{data.groom_name}</h1>
+                {data.groom_parents && <p className="text-lg md:text-xl font-sans italic opacity-80">S/O {data.groom_parents}</p>}
+                
+                <span className="text-4xl md:text-6xl my-2 italic text-amber-300 font-serif">&amp;</span>
+                
+                <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold leading-tight">{data.bride_name}</h1>
+                {data.bride_parents && <p className="text-lg md:text-xl font-sans italic opacity-80">D/O {data.bride_parents}</p>}
+              </>
+            )}
+          </motion.div>
           
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -414,13 +481,41 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
           <p className="text-xl leading-relaxed whitespace-pre-line text-stone-600 font-sans">
             {data.venue}
           </p>
-          <div className="mt-8 pt-8 border-t border-stone-100">
+          <div className="mt-8 pt-8 border-t border-stone-100 flex flex-col items-center gap-4">
             <p className="font-bold text-2xl">
               {new Date(data.wedding_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
             </p>
+            {data.google_map_link && (
+              <a 
+                href={data.google_map_link} 
+                target="_blank" 
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-stone-800 text-white rounded-full font-sans text-sm font-medium hover:bg-stone-900 transition-colors"
+              >
+                <MapPin className="w-4 h-4" /> Get Directions
+              </a>
+            )}
           </div>
         </motion.div>
       </section>
+
+      {/* RSVP Section */}
+      {data.rsvp_enabled && (
+        <section className="py-20 px-4 text-center bg-stone-100 text-stone-800">
+          <div className="max-w-xl mx-auto">
+            <h2 className="text-4xl font-serif mb-6">RSVP</h2>
+            <p className="text-stone-600 font-sans mb-8">
+              We would be thrilled to have you join us. Please let us know if you can make it.
+            </p>
+            <button 
+              onClick={() => setRsvpModalOpen(true)}
+              className="px-8 py-4 bg-stone-800 text-white rounded-full font-sans font-medium hover:bg-stone-900 transition-colors shadow-lg hover:shadow-xl active:scale-95"
+            >
+              RSVP Now
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* Gallery Section */}
       {data.galleries && data.galleries.length > 0 && (
@@ -482,6 +577,122 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
               onClick={(e) => e.stopPropagation()}
             />
             {/* Simple Prev/Next overlay controls could be added here */}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* RSVP Modal */}
+      <AnimatePresence>
+        {rsvpModalOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center backdrop-blur-sm p-4 font-sans"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md relative max-h-[90vh] overflow-y-auto"
+            >
+              <button 
+                className="absolute top-6 right-6 text-stone-400 hover:text-stone-800 transition-colors"
+                onClick={() => { setRsvpModalOpen(false); setRsvpStatus('idle'); }}
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              <h3 className="text-3xl font-serif text-stone-800 mb-6 text-center">RSVP</h3>
+              
+              {rsvpStatus === 'success' ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-2xl font-serif text-stone-800 mb-2">Thank You!</h4>
+                  <p className="text-stone-600">Your RSVP has been received successfully.</p>
+                  <button 
+                    onClick={() => setRsvpModalOpen(false)}
+                    className="mt-8 px-6 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-lg font-medium transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={submitRsvp} className="space-y-4 text-stone-700 text-left">
+                  {rsvpStatus === 'error' && (
+                    <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                      Something went wrong. Please try again.
+                    </div>
+                  )}
+                  
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Full Name *</label>
+                    <input 
+                      type="text" required
+                      value={rsvpForm.name}
+                      onChange={e => setRsvpForm({...rsvpForm, name: e.target.value})}
+                      className="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-stone-400 outline-none transition-all"
+                      placeholder="John Doe"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Email (Optional)</label>
+                    <input 
+                      type="email"
+                      value={rsvpForm.email}
+                      onChange={e => setRsvpForm({...rsvpForm, email: e.target.value})}
+                      className="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-stone-400 outline-none transition-all"
+                      placeholder="john@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Will you attend? *</label>
+                    <select 
+                      value={rsvpForm.attending}
+                      onChange={e => setRsvpForm({...rsvpForm, attending: e.target.value})}
+                      className="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-stone-400 outline-none transition-all"
+                    >
+                      <option value="true">Joyfully Accept</option>
+                      <option value="false">Regretfully Decline</option>
+                    </select>
+                  </div>
+
+                  {rsvpForm.attending === 'true' && (
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Number of Guests (including yourself) *</label>
+                      <input 
+                        type="number" required min="1" max="10"
+                        value={rsvpForm.guests_count}
+                        onChange={e => setRsvpForm({...rsvpForm, guests_count: e.target.value})}
+                        className="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-stone-400 outline-none transition-all"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Message for the couple / Dietary Requirements (Optional)</label>
+                    <textarea 
+                      rows={3}
+                      value={rsvpForm.message}
+                      onChange={e => setRsvpForm({...rsvpForm, message: e.target.value})}
+                      className="w-full px-4 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-stone-400 outline-none transition-all"
+                    ></textarea>
+                  </div>
+
+                  <button 
+                    type="submit"
+                    disabled={rsvpStatus === 'submitting'}
+                    className="w-full py-3 bg-stone-800 text-white rounded-xl font-medium mt-6 hover:bg-stone-900 transition-colors disabled:opacity-50"
+                  >
+                    {rsvpStatus === 'submitting' ? 'Submitting...' : 'Send RSVP'}
+                  </button>
+                </form>
+              )}
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

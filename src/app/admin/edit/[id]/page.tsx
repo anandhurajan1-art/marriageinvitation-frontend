@@ -16,6 +16,11 @@ interface FormData {
   venue: string;
   message: string;
   is_public: boolean;
+  google_map_link: string;
+  bride_parents: string;
+  groom_parents: string;
+  name_order: string;
+  rsvp_enabled: boolean;
 }
 
 const templates = [
@@ -96,6 +101,11 @@ export default function EditInvitationPage() {
     venue: '',
     message: '',
     is_public: true,
+    google_map_link: '',
+    bride_parents: '',
+    groom_parents: '',
+    name_order: 'groom_first',
+    rsvp_enabled: false,
   });
 
   // Files State
@@ -104,6 +114,8 @@ export default function EditInvitationPage() {
   const [bgImage, setBgImage] = useState<File | null>(null);
   const [bgMusic, setBgMusic] = useState<File | null>(null);
   const [gallery, setGallery] = useState<File[]>([]);
+  const [existingGallery, setExistingGallery] = useState<any[]>([]);
+  const [deletedGalleryIds, setDeletedGalleryIds] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchInv = async () => {
@@ -118,8 +130,14 @@ export default function EditInvitationPage() {
           wedding_date: formattedDate,
           venue: inv.venue,
           message: inv.message || '',
-          is_public: inv.is_public
+          is_public: inv.is_public,
+          google_map_link: inv.google_map_link || '',
+          bride_parents: inv.bride_parents || '',
+          groom_parents: inv.groom_parents || '',
+          name_order: inv.name_order || 'groom_first',
+          rsvp_enabled: inv.rsvp_enabled || false,
         });
+        setExistingGallery(inv.galleries || []);
       } catch (err) {
         setError('Failed to load invitation');
       }
@@ -157,6 +175,10 @@ export default function EditInvitationPage() {
       
       gallery.forEach((file) => {
         data.append('gallery', file);
+      });
+
+      deletedGalleryIds.forEach((id) => {
+        data.append('deleted_gallery_ids', id);
       });
 
       await api.put(`/invitations/${params.id}`, data);
@@ -294,6 +316,62 @@ export default function EditInvitationPage() {
                       placeholder="e.g. Join us in celebrating our special day..."
                     ></textarea>
                   </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Bride's Parents (Optional)</label>
+                    <input 
+                      type="text"
+                      value={formData.bride_parents}
+                      onChange={(e) => setFormData({...formData, bride_parents: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500"
+                      placeholder="e.g. Mr. John & Mrs. Jane Doe"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Groom's Parents (Optional)</label>
+                    <input 
+                      type="text"
+                      value={formData.groom_parents}
+                      onChange={(e) => setFormData({...formData, groom_parents: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500"
+                      placeholder="e.g. Mr. Robert & Mrs. Mary Smith"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Name Display Order</label>
+                    <select
+                      value={formData.name_order}
+                      onChange={(e) => setFormData({...formData, name_order: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 bg-white"
+                    >
+                      <option value="groom_first">Groom's Name First</option>
+                      <option value="bride_first">Bride's Name First</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Google Map Link (Optional)</label>
+                    <input 
+                      type="url"
+                      value={formData.google_map_link}
+                      onChange={(e) => setFormData({...formData, google_map_link: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500"
+                      placeholder="https://maps.google.com/..."
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 mt-4">
+                    <input 
+                      type="checkbox" 
+                      id="rsvp_enabled" 
+                      checked={formData.rsvp_enabled}
+                      onChange={(e) => setFormData({...formData, rsvp_enabled: e.target.checked})}
+                      className="w-5 h-5 text-stone-800 rounded border-gray-300 focus:ring-stone-800"
+                    />
+                    <label htmlFor="rsvp_enabled" className="text-stone-700 font-medium">Enable RSVP Option</label>
+                  </div>
                 </div>
               )}
 
@@ -347,23 +425,56 @@ export default function EditInvitationPage() {
                     <GalleryUploadDropzone gallery={gallery} setGallery={setGallery} />
                   </div>
 
+                  {/* Existing Gallery Photos */}
+                  {existingGallery.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium text-stone-700">Current Gallery</h3>
+                      <div className="grid grid-cols-4 gap-4">
+                        {existingGallery.map((item) => (
+                          <div key={item.id} className="relative group rounded-lg overflow-hidden border border-stone-200 aspect-square">
+                            <img 
+                              src={item.image_url} 
+                              alt="Gallery saved" 
+                              className="w-full h-full object-cover"
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setDeletedGalleryIds([...deletedGalleryIds, item.id]);
+                                setExistingGallery(existingGallery.filter((g) => g.id !== item.id));
+                              }}
+                              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Staged (New) Gallery Photos */}
                   {gallery.length > 0 && (
-                    <div className="grid grid-cols-4 gap-4 mt-6">
-                      {gallery.map((file, idx) => (
-                        <div key={idx} className="relative group rounded-lg overflow-hidden border border-stone-200 aspect-square">
-                          <img 
-                            src={URL.createObjectURL(file)} 
-                            alt="Gallery preview" 
-                            className="w-full h-full object-cover"
-                          />
-                          <button 
-                            onClick={() => setGallery(gallery.filter((_, i) => i !== idx))}
-                            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
+                    <div className="space-y-2 mt-6">
+                      <h3 className="text-sm font-medium text-stone-700">New Photos to Upload</h3>
+                      <div className="grid grid-cols-4 gap-4">
+                        {gallery.map((file, idx) => (
+                          <div key={idx} className="relative group rounded-lg overflow-hidden border border-stone-200 aspect-square">
+                            <img 
+                              src={URL.createObjectURL(file)} 
+                              alt="Gallery preview" 
+                              className="w-full h-full object-cover"
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => setGallery(gallery.filter((_, i) => i !== idx))}
+                              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                   

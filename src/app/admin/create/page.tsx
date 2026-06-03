@@ -16,6 +16,11 @@ interface FormData {
   venue: string;
   message: string;
   is_public: boolean;
+  google_map_link: string;
+  bride_parents: string;
+  groom_parents: string;
+  name_order: string;
+  rsvp_enabled: boolean;
 }
 
 const templates = [
@@ -95,6 +100,11 @@ export default function CreateInvitationPage() {
     venue: '',
     message: '',
     is_public: true,
+    google_map_link: '',
+    bride_parents: '',
+    groom_parents: '',
+    name_order: 'groom_first',
+    rsvp_enabled: false,
   });
 
   // Files State
@@ -270,6 +280,62 @@ export default function CreateInvitationPage() {
                       className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500"
                       placeholder="e.g. Join us in celebrating our special day..."
                     ></textarea>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Bride's Parents (Optional)</label>
+                    <input 
+                      type="text"
+                      value={formData.bride_parents}
+                      onChange={(e) => setFormData({...formData, bride_parents: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500"
+                      placeholder="e.g. Mr. John & Mrs. Jane Doe"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Groom's Parents (Optional)</label>
+                    <input 
+                      type="text"
+                      value={formData.groom_parents}
+                      onChange={(e) => setFormData({...formData, groom_parents: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500"
+                      placeholder="e.g. Mr. Robert & Mrs. Mary Smith"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Name Display Order</label>
+                    <select
+                      value={formData.name_order}
+                      onChange={(e) => setFormData({...formData, name_order: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500 bg-white"
+                    >
+                      <option value="groom_first">Groom's Name First</option>
+                      <option value="bride_first">Bride's Name First</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-stone-700 mb-1">Google Map Link (Optional)</label>
+                    <input 
+                      type="url"
+                      value={formData.google_map_link}
+                      onChange={(e) => setFormData({...formData, google_map_link: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-stone-500"
+                      placeholder="https://maps.google.com/..."
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 mt-4">
+                    <input 
+                      type="checkbox" 
+                      id="rsvp_enabled" 
+                      checked={formData.rsvp_enabled}
+                      onChange={(e) => setFormData({...formData, rsvp_enabled: e.target.checked})}
+                      className="w-5 h-5 text-stone-800 rounded border-gray-300 focus:ring-stone-800"
+                    />
+                    <label htmlFor="rsvp_enabled" className="text-stone-700 font-medium">Enable RSVP Option</label>
                   </div>
                 </div>
               )}
