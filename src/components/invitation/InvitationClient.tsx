@@ -6,6 +6,7 @@ import { Music, Pause, Play, MapPin, Calendar, Heart, Share2, X, Download, FileT
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 import { useAuthStore } from '@/store/authStore';
+import api from '@/lib/api';
 
 interface Gallery {
   id: string;
@@ -148,18 +149,13 @@ export default function InvitationClient({ data }: { data: InvitationData }) {
     e.preventDefault();
     setRsvpStatus('submitting');
     try {
-      const res = await fetch(`http://localhost:5000/api/rsvps/${data.id}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: rsvpForm.name,
-          email: rsvpForm.email,
-          attending: rsvpForm.attending === 'true',
-          guests_count: rsvpForm.attending === 'true' ? parseInt(rsvpForm.guests_count) : 0,
-          message: rsvpForm.message
-        })
+      await api.post(`/rsvps/${data.id}`, {
+        name: rsvpForm.name,
+        email: rsvpForm.email,
+        attending: rsvpForm.attending === 'true',
+        guests_count: rsvpForm.attending === 'true' ? parseInt(rsvpForm.guests_count) : 0,
+        message: rsvpForm.message
       });
-      if (!res.ok) throw new Error('Failed to submit RSVP');
       setRsvpStatus('success');
     } catch (err) {
       console.error(err);
