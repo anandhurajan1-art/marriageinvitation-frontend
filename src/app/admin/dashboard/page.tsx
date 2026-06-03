@@ -5,7 +5,6 @@ import api from '@/lib/api';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Edit, Trash2, Link as LinkIcon, ExternalLink, Users } from 'lucide-react';
 import Link from 'next/link';
-import { format } from 'date-fns'; // Need to install date-fns
 
 interface Invitation {
   id: string;
