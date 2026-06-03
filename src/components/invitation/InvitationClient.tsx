@@ -26,7 +26,9 @@ interface InvitationData {
   message: string;
   galleries: Gallery[];
   google_map_link?: string | null;
-  parents_name?: string | null;
+  bride_parents?: string | null;
+  groom_parents?: string | null;
+  name_order?: string;
   rsvp_enabled?: boolean;
 }
 
